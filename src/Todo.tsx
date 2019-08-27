@@ -1,16 +1,20 @@
 import React from 'react';
+interface dl {
+  dl: () => void;
+}
 export interface ITodo {
   id: string;
   text: string;
   done: boolean;
-  delete: () => void;
 }
-export const todo = (props: ITodo) => {
+interface IProps extends ITodo, dl { }
+
+export const Todo = (props: IProps) => {
   return (
-    <div key={props.id}>
-      <input type="checkbox" checked={props.done} />
+    <div key={props.id} style={{ display: 'flex', width: '300px', justifyContent: 'space-between', alignItems: 'center' }}>
+      <input type="checkbox" checked={props.done} disabled />
       <span>{props.text}</span>
-      <button onClick={props.delete}>Delete</button>
+      <button onClick={props.dl}>Delete</button>
     </div>
   );
 };
