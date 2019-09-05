@@ -1,13 +1,14 @@
 import React from 'react';
-interface dl {
+interface clk {
   dl: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  dbl: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 export interface ITodo {
   id: string;
   text: string;
   done: boolean;
 }
-interface IProps extends ITodo, dl {}
+interface IProps extends ITodo, clk {}
 
 export const Todo = (props: IProps) => {
   return (
@@ -21,7 +22,12 @@ export const Todo = (props: IProps) => {
       }}
     >
       <input type="checkbox" checked={props.done} disabled />
-      <span>{props.text}</span>
+      <span
+        id={props.id}
+        onDoubleClick={(e: React.MouseEvent<HTMLButtonElement>) => props.dbl(e)}
+      >
+        {props.text}
+      </span>
       <button
         id={props.id}
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => props.dl(e)}

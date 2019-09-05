@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import './App.css';
 import { ITodo } from './Todo';
 import axios, { AxiosResponse } from 'axios';
@@ -9,6 +9,7 @@ interface IState {
   text: string;
   done: boolean;
   todos: ITodo[];
+  isOpen: boolean;
 }
 interface IProps {}
 class App extends React.Component<IProps, IState> {
@@ -16,11 +17,30 @@ class App extends React.Component<IProps, IState> {
     id: '',
     text: '',
     done: false,
-    todos: []
+    todos: [],
+    isOpen: false
   };
   componentDidMount() {
     this.getData();
   }
+
+  saveHandler = (e: any) => {
+    e.preventDefault();
+    axios
+      .put(`https://todo-ts-58222.firebaseio.com/todos/${this.state.id}.json`, {
+        done: this.state.done,
+        text: this.state.text
+      })
+      .then(res => {
+        this.setState({
+          isOpen: false
+        });
+      })
+      .then(() => {
+        this.getData();
+      });
+  };
+
   getData = () => {
     axios
       .get('https://todo-ts-58222.firebaseio.com/todos.json')
@@ -35,15 +55,16 @@ class App extends React.Component<IProps, IState> {
         this.setState({ todos: [...fetchedOrders] });
       });
   };
+
   deleteFromServer = (e: any) => {
     axios
       .delete(`https://todo-ts-58222.firebaseio.com/todos/${e.target.id}.json`)
-      .then(response => {})
       .then(() => {
         this.getData();
       })
       .catch(err => console.log(err));
   };
+
   delHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
     this.deleteFromServer(e);
   };
@@ -52,9 +73,26 @@ class App extends React.Component<IProps, IState> {
     e.preventDefault();
     this.setState({ text: e.target.value });
   };
+
   onCheckHandler = (e: any) => {
     this.setState({ done: e.target.checked });
   };
+
+  editHandler = (e: any) => {
+    e.persist(); // HACK to use in asynchronous events
+
+    axios
+      .get(`https://todo-ts-58222.firebaseio.com/todos/${e.target.id}.json`)
+      .then(response => {
+        this.setState({
+          id: e.target.id,
+          done: response.data.done,
+          text: response.data.text,
+          isOpen: true
+        });
+      });
+  };
+
   submitHandler = (e: any) => {
     e.preventDefault();
     const data = { text: this.state.text, done: this.state.done };
@@ -71,6 +109,7 @@ class App extends React.Component<IProps, IState> {
       })
       .catch(err => console.log(err));
   };
+
   public render() {
     let todos = null;
     if (this.state.todos.length) {
@@ -82,15 +121,42 @@ class App extends React.Component<IProps, IState> {
             text={todo.text}
             done={todo.done}
             dl={(e: React.MouseEvent<HTMLButtonElement>) => this.delHandler(e)}
+            dbl={(e: React.MouseEvent<HTMLButtonElement>) =>
+              this.editHandler(e)
+            }
           />
         );
       });
     }
+
     return (
-      <div className="App">
-        <header className="App-header">
+      <Fragment>
+        <div className="App">
+          <header className="App-header">
+            <form
+              onSubmit={this.submitHandler}
+              style={{ display: 'flex', alignItems: 'center' }}
+            >
+              <input
+                name="isDone"
+                type="checkbox"
+                checked={this.state.done}
+                onChange={this.onCheckHandler}
+              />
+              <input
+                name="todotext"
+                value={this.state.text}
+                onChange={this.onChangeHandler}
+              />
+              <button type="submit">Add</button>
+            </form>
+            <span style={{ fontSize: '11px' }}>DoubleClick for edit</span>
+            {todos}
+          </header>
+        </div>
+        <div className={`modal ${this.state.isOpen ? '' : 'dn'}`}>
           <form
-            onSubmit={this.submitHandler}
+            onSubmit={this.saveHandler}
             style={{ display: 'flex', alignItems: 'center' }}
           >
             <input
@@ -104,11 +170,13 @@ class App extends React.Component<IProps, IState> {
               value={this.state.text}
               onChange={this.onChangeHandler}
             />
-            <button type="submit">Add</button>
+            <button type="submit">Save</button>
+            <button onClick={() => this.setState({ isOpen: false })}>
+              Cancel
+            </button>
           </form>
-          {todos}
-        </header>
-      </div>
+        </div>
+      </Fragment>
     );
   }
 }
